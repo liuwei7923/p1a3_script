@@ -1,12 +1,15 @@
 # p1a3_script
 一亩三分地的油猴脚本
+
+当前版本：0.10.5
+
 # 安装
 ## 自动（推荐）
 0. 安裝[油猴](https://greasyfork.org/)插件
 1. 点击油猴图标
 2. 管理面板
 3. 页面中点击实用工具
-4. 在URL文本框输入源码[地址](https://raw.githubusercontent.com/eagleoflqj/p1a3_script/master/p1a3_script.js)，点击导入
+4. 在URL文本框输入源码[地址](https://raw.githubusercontent.com/liuwei7923/p1a3_script/master/p1a3_script.js)，点击导入
 
 ![安装過程](https://user-images.githubusercontent.com/14802181/85127126-730c9e00-b261-11ea-885c-6622b760352a.png)
 
@@ -29,6 +32,12 @@ Greasy Fork已停更，请删除并切换为自动安装
 同手动安装
 ## Greasy Fork
 卸载
+# 更新日志
+## 0.10.5
+* 修复新版每日答题页面无法自动选中答案的问题
+* 增强每日答题题目识别逻辑，避免误匹配导航栏文字
+* 增强选项DOM兼容性，支持新版页面中的label、button、radio/checkbox等选项结构
+* 每日签到和答题页面改用路径匹配，兼容尾斜杠和URL参数
 # 功能
 ## 论坛
 ### 自动签到
