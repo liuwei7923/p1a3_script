@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         1p3a_script
 // @namespace    https://github.com/eagleoflqj/p1a3_script
-// @version      0.10.5
+// @version      0.10.7
 // @description  方便使用一亩三分地
 // @author       Liumeo
 // @match        https://www.1point3acres.com/*
@@ -66,7 +66,9 @@
     const path = window.location.pathname.replace(/\/$/, '');
     if (url.search(/https:\/\/www\.1point3acres\.com\/bbs\/((forum|thread|tag|plugin.php\?id=dsu_paulsign:sign).*)?$/) == 0) { // 可签到、答题的页面
         // 自动签到
-        const sign = jq('div.flex > a:contains("签到领奖")')[0];
+        const sign = jq('div.flex > a:contains("签到领奖")')[0] ||
+            jq('a[href*="/next/daily-checkin"]')[0] ||
+            jq('a:contains("签到")').toArray().find(element => /daily-checkin|签到领奖|每日签到/.test(element.href + element.textContent));
         sign && (sign.target = '_blank') && sign.click(); // 点击签到领奖
         if (url === 'https://www.1point3acres.com/bbs/plugin.php?id=dsu_paulsign:sign&operation=qiandao&infloat=0&inajax=0') { // 签到成功跳转页
             return;
@@ -89,11 +91,60 @@
         })();
     }
     if (path === '/next/daily-checkin') {
-        const panel = document.querySelector('.grid.grid-cols-5');
-        setTimeout(() => {
-            panel.querySelector('.grid-cols-5 .rounded-md.border:last-child').click();
-            // setInterval(() => panel.querySelector('.text-center > button').click(), 1000);
-        }, 1000);
+        const normalizeText = text => (text || '').replace(/\s+/g, ' ').trim();
+        const isClickable = element => element && !element.disabled && element.getAttribute('aria-disabled') !== 'true';
+        const triggerInput = element => {
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        const setInputValue = (element, value) => {
+            const prototype = Object.getPrototypeOf(element);
+            const valueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+            valueSetter.call(element, value);
+            triggerInput(element);
+        };
+        const findCheckinOption = root => {
+            const preferredOptions = root.querySelectorAll([
+                '.grid.grid-cols-5 .rounded-md.border',
+                '[class*="grid-cols-5"] [class*="rounded"][class*="border"]',
+                'button.rounded-md.border',
+                'button[class*="rounded"][class*="border"][class*="text-center"]',
+                '[role="radio"]',
+                '[role="checkbox"]',
+                'input[type="radio"]',
+                'input[type="checkbox"]'
+            ].join(','));
+            return [...preferredOptions].filter(isClickable).pop();
+        };
+        const fillTodaySay = root => {
+            const textarea = root.querySelector('textarea[name="todaysay"], textarea');
+            if (!textarea || normalizeText(textarea.value)) {
+                return;
+            }
+            setInputValue(textarea, '每日签到');
+        };
+        const findSubmit = root => [...root.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]')]
+            .find(element => isClickable(element) && /签到|提交|领取|记录/.test(normalizeText(element.innerText || element.value || element.textContent)));
+        const submitWhenReady = (root, attempt = 0) => {
+            const submit = findSubmit(root);
+            if (submit) {
+                submit.click();
+                return;
+            }
+            attempt < 8 && setTimeout(() => submitWhenReady(root, attempt + 1), 500);
+        };
+        const helper = () => {
+            const root = document.querySelector('main') || document.body;
+            const option = findCheckinOption(root);
+            if (!option) {
+                setTimeout(helper, 1000);
+                return;
+            }
+            option.click();
+            fillTodaySay(root);
+            setTimeout(() => submitWhenReady(root), 300);
+        };
+        setTimeout(helper, 1000);
     }
     if (path === '/next/daily-question') { // 自动答题页
         const normalizeText = text => (text || '').replace(/\s+/g, ' ').trim();
